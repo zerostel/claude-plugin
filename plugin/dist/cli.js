@@ -3299,14 +3299,47 @@ function absPatterns(pattern, call) {
 function commandPaths(command, max = LIMITS.paths) {
   const out2 = [];
   for (const m of command.matchAll(/"([^"]*)"|'([^']*)'|([^\s"';|&<>()`]+)/g)) {
-    const tok = pathLike(m[1] ?? m[2] ?? m[3] ?? "");
-    if (tok) out2.push(tok);
+    out2.push(...wordPaths(m[1] ?? m[2] ?? m[3] ?? ""));
     if (out2.length > max) break;
   }
   return out2;
 }
-function pathLike(word) {
-  const tok = word.replace(/^\d?>+|^<+/, "");
+function wordPaths(word) {
+  const tok = word.replace(/^(?:\d?>+\|?|&>+|<+)/, "");
+  if (!tok) return [];
+  const values = tok.startsWith("-") ? [] : [tok];
+  if (tok.startsWith("-")) {
+    const ps = /^-[A-Za-z][\w-]*:(.+)$/.exec(tok);
+    if (ps) values.push(ps[1]);
+    if (/^-[A-Za-z0-9]./.test(tok)) values.push(tok.slice(2));
+  }
+  const first = tok.indexOf("=");
+  if (first > 0) {
+    const second = tok.indexOf("=", first + 1);
+    for (const i of /* @__PURE__ */ new Set([first, second, tok.lastIndexOf("=")])) if (i > 0) values.push(tok.slice(i + 1));
+  }
+  const out2 = [];
+  for (const value of values) {
+    for (const piece of value.includes(",") ? [value, ...value.split(",")] : [value]) {
+      const v = piece.replace(/^[@<]/, "");
+      for (const p of v.includes(";") ? [v, v.slice(0, v.indexOf(";"))] : [v]) {
+        const path22 = pathLike(p);
+        if (path22) out2.push(path22);
+      }
+    }
+  }
+  return out2;
+}
+function pathLike(tok) {
+  const url = /^file:\/\/(?:localhost)?(\/[^?#]*)/i.exec(tok);
+  if (url) {
+    let p = url[1];
+    try {
+      p = decodeURIComponent(p);
+    } catch {
+    }
+    return p.replace(/^\/([A-Za-z]:)/, "$1");
+  }
   if (!tok || tok.startsWith("-") || /^[a-z][a-z0-9+.-]*:\/\//i.test(tok)) return null;
   const named = /[\\/]/.test(tok) || tok.startsWith("~") || tok.startsWith(".") || tok.startsWith("$") || tok.startsWith("%");
   const fileName = /^[\w@+-][\w.@+-]*\.[A-Za-z0-9]{1,10}$/.test(tok) && !/^[\d.]+$/.test(tok);
@@ -3493,10 +3526,7 @@ function parseCommand(command, platform, depth = 0, out2 = { parts: [], paths: [
       for (const form of [words, ...unwrap(words)]) {
         if (!form.length) continue;
         out2.parts.push(form.join(" "));
-        for (const word of form) {
-          const p = pathLike(word);
-          if (p) out2.paths.push(p);
-        }
+        for (const word of form) out2.paths.push(...wordPaths(word));
         for (const inner of innerCommands(form, raw)) nested.add(inner);
       }
     }
@@ -3513,8 +3543,10 @@ function parseCommand(command, platform, depth = 0, out2 = { parts: [], paths: [
 function normalizePath(raw, call, gaps) {
   const win = call.platform === "win32";
   let p = raw.trim();
-  p = p.replace(/^(?:\$\{HOME\}|\$HOME|\$env:USERPROFILE|%USERPROFILE%|%HOMEDRIVE%%HOMEPATH%)(?=$|[\\/])/i, call.home);
+  p = p.replace(/^(?:\$\{HOME\}|\$HOME|\$\{USERPROFILE\}|\$USERPROFILE|\$env:USERPROFILE|\$env:HOME|%USERPROFILE%|%HOMEDRIVE%%HOMEPATH%|\$\{?HOMEDRIVE\}?\$\{?HOMEPATH\}?|\$env:HOMEDRIVE\$env:HOMEPATH)(?=$|[\\/])/i, call.home);
   if (p === "~" || /^~[\\/]/.test(p)) p = call.home + p.slice(1);
+  const user = /^~([^\\/]+)(?=$|[\\/])/.exec(p);
+  if (user && user[1].toLowerCase() === path11.basename(call.home).toLowerCase()) p = call.home + p.slice(user[0].length);
   if (win) {
     p = p.replace(/^\\\\[?.]\\UNC\\/i, "\\\\").replace(/^\\\\[?.]\\(?=[A-Za-z]:)/, "");
     p = p.replace(/^\\\\(?:localhost|127\.0\.0\.1)\\([A-Za-z])\$\\/i, "$1:\\");
@@ -3606,7 +3638,7 @@ import path12 from "path";
 import { fileURLToPath } from "url";
 
 // src/version.ts
-var VERSION = true ? "0.3.1" : "0.0.0-dev";
+var VERSION = true ? "0.3.2" : "0.0.0-dev";
 var STANDALONE = typeof __STANDALONE__ === "boolean" && __STANDALONE__;
 
 // src/install.ts
