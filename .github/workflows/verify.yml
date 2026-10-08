@@ -1,6 +1,6 @@
 name: Verify
 
-# The files here are the npm release named in .claude-plugin/plugin.json,
+# The files here are the npm release named in plugin/.claude-plugin/plugin.json,
 # built by zerostel/zerostel's release workflow: scripts/release.mjs checks
 # the registry's signature, the provenance, and every file.
 
@@ -25,4 +25,4 @@ jobs:
         with:
           node-version: 24
       - name: The files match the npm release they name
-        run: node scripts/release.mjs "$(node -p "require('./.claude-plugin/plugin.json').version")"
+        run: node scripts/release.mjs "$(node -p "require('./plugin/.claude-plugin/plugin.json').version")"

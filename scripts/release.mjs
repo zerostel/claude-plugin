@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 
 const SOURCE = { repository: 'https://github.com/zerostel/zerostel', path: '.github/workflows/release.yml' };
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// what users install is this folder alone: the scripts and workflows here stay out of it
+const plugin = 'plugin';
 const [version, mode] = process.argv.slice(2);
 const write = mode === '--write';
 
@@ -63,13 +65,14 @@ try {
 
   // 4. the files this plugin carries
   const read = (rel) => fs.readFileSync(path.join(pkg, rel));
-  const manifest = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, plugin, '.claude-plugin', 'plugin.json'), 'utf8'));
   const expected = {
-    'dist/cli.js': read('dist/cli.js'),
-    'hooks/hooks.json': read('hooks/claude-code.json'),
-    'skills/zerostel/SKILL.md': Buffer.from(pluginSkill(read('skills/zerostel/SKILL.md').toString('utf8'))),
+    [`${plugin}/dist/cli.js`]: read('dist/cli.js'),
+    [`${plugin}/hooks/hooks.json`]: read('hooks/claude-code.json'),
+    [`${plugin}/skills/zerostel/SKILL.md`]: Buffer.from(pluginSkill(read('skills/zerostel/SKILL.md').toString('utf8'))),
+    [`${plugin}/LICENSE`]: read('LICENSE'),
     LICENSE: read('LICENSE'),
-    '.claude-plugin/plugin.json': Buffer.from(`${JSON.stringify({ ...manifest, version }, null, 2)}\n`),
+    [`${plugin}/.claude-plugin/plugin.json`]: Buffer.from(`${JSON.stringify({ ...manifest, version }, null, 2)}\n`),
   };
   const differ = [];
   for (const [rel, want] of Object.entries(expected)) {
@@ -82,7 +85,7 @@ try {
       fs.writeFileSync(file, want);
     }
   }
-  const sha256 = crypto.createHash('sha256').update(expected['dist/cli.js']).digest('hex');
+  const sha256 = crypto.createHash('sha256').update(expected[`${plugin}/dist/cli.js`]).digest('hex');
   if (!write && differ.length) fail(`not the files of zerostel@${version}: ${differ.join(', ')}`);
   console.log(`zerostel@${version}: signed by the registry, built by ${SOURCE.repository} at v${version}`);
   console.log(`dist/cli.js sha256 ${sha256}`);
