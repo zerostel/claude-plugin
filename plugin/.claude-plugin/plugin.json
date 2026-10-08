@@ -1,7 +1,7 @@
 {
   "name": "zerostel",
   "displayName": "Zerostel",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Records every step Claude Code takes and snapshots the project around each one, shell commands included, so you can see what changed and put the files back. Guardrails you set, test results tied to the code they ran on. Runs locally; nothing is sent anywhere.",
   "author": {
     "name": "Zerostel",
