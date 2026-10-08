@@ -1,0 +1,24 @@
+{
+  "name": "zerostel",
+  "displayName": "Zerostel",
+  "version": "0.3.0",
+  "description": "Records every step Claude Code takes and snapshots the project around each one, shell commands included, so you can see what changed and put the files back. Guardrails you set, test results tied to the code they ran on. Runs locally; nothing is sent anywhere.",
+  "author": {
+    "name": "Zerostel",
+    "email": "hello@zerostel.com",
+    "url": "https://zerostel.com"
+  },
+  "homepage": "https://zerostel.com",
+  "repository": "https://github.com/zerostel/claude-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "rewind",
+    "undo",
+    "checkpoint",
+    "snapshot",
+    "timeline",
+    "guardrails",
+    "audit",
+    "security"
+  ]
+}

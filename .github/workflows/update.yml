@@ -1,0 +1,47 @@
+name: Update from npm
+
+# Brings the plugin to a new Zerostel release and opens a pull request.
+# scripts/release.mjs checks the release before taking anything from it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: A zerostel version on npm, such as 0.3.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # keeps the job's token for the push below; nothing else runs in this job
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # the version reaches the shell through the environment, never pasted into
+      # the script, and release.mjs refuses anything but x.y.z before using it
+      - name: Copy the release's files in
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node scripts/release.mjs "$VERSION" --write
+      - name: Open a pull request
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then echo "already at $VERSION"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "update/$VERSION"
+          git commit -qam "zerostel $VERSION"
+          git push -q origin "update/$VERSION"
+          gh pr create --base main --head "update/$VERSION" --title "zerostel $VERSION" \
+            --body "The files of the npm release zerostel@$VERSION, checked by scripts/release.mjs: signed by the registry, built by zerostel/zerostel's release workflow at v$VERSION. Run the Verify workflow on this branch before merging: pull requests opened by a workflow don't start it."
