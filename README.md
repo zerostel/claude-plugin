@@ -32,6 +32,12 @@ node "${CLAUDE_PLUGIN_ROOT}/dist/cli.js" hook claude-code
 - **Network:** none. No telemetry, no account, nothing is sent anywhere. The one server in the program is `zerostel ui`, which serves the timeline on 127.0.0.1 to your own browser, and only when you run it.
 - **Can stop a tool call** only if a rule in your `policy.json` says so.
 
+Three things an automated review of this plugin points out, and what they are:
+
+- **The `PreToolUse` hook answers permission questions.** It only ever answers `ask` or `deny`, when one of your own `policy.json` rules says so, and never `allow`: it can't approve a tool call that Claude Code would otherwise ask you about, and it never changes a tool's input. Its matcher is `*` because every tool call is recorded.
+- **It reads files like `.env` and `.npmrc`.** Snapshots include small files that git ignores, `.env` and `.npmrc` first, so a rewind can bring back a config file the agent deleted or overwrote. These copies stay in `~/.zerostel` with everything else, are never sent anywhere or used to sign in to anything, and shareable reports leave such files out.
+- **`dist/cli.js` contains `Invoke-Expression`.** That is the hint printed by `zerostel completion powershell`, telling you how to load tab completion into your own PowerShell profile. Nothing is downloaded, and it only runs if you choose to follow it.
+
 `dist/cli.js` is Zerostel's whole program in one readable JavaScript file with no dependencies. It isn't built here: it is the `dist/cli.js` of the npm package [zerostel](https://www.npmjs.com/package/zerostel) at the version in `.claude-plugin/plugin.json`, byte for byte, as are `hooks/hooks.json` (the package's `hooks/claude-code.json`) and `LICENSE`. The skill is the package's skill with one change, made by `scripts/release.mjs`: it runs this copy of Zerostel instead of asking you to install one.
 
 ## Check it yourself
