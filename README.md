@@ -56,7 +56,7 @@ Please report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 
 ## For maintainers
 
-After each Zerostel release: Actions → **Update from npm** → Run workflow with the version. It runs `scripts/release.mjs <version> --write` and opens a pull request. Pull requests opened by a workflow don't start other workflows, so run **Verify** on that branch before merging. Then submit the new version in the developer portal.
+After each Zerostel release: Actions → **Update from npm** → Run workflow with the version. It runs `scripts/release.mjs <version> --write`, pushes the result to a branch `update/<version>` and prints the link for a pull request. A branch pushed by a workflow doesn't start other workflows, so run **Verify** on it before merging. Then submit the new version in the developer portal.
 
 ## License
 
